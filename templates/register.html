@@ -3,58 +3,108 @@
 {% block title %}Register - InvestiBuddy{% endblock %}
 
 {% block content %}
-<h2>Register</h2>
-<form method="POST">
-    <div class="mb-3">
-        <label for="username" class="form-label">Username</label>
-        <input type="text" class="form-control" id="username" name="username" required>
-    </div>
-    <div class="mb-3">
-        <label for="email" class="form-label">Email</label>
-        <input type="email" class="form-control" id="email" name="email" required>
-        <div class="form-text">We'll send a verification code to this email</div>
-    </div>
-    <div class="mb-3">
-        <label for="password" class="form-label">Password</label>
-        <div class="input-group">
-            <input type="password" class="form-control" id="password" name="password" required onkeyup="checkPasswordStrength()">
-            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                <i class="bi bi-eye" id="toggleIcon"></i>
-            </button>
-        </div>
-        <div id="passwordStrength" class="mt-2">
-            <div class="progress">
-                <div id="passwordStrengthBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body">
+                <h2 class="text-center mb-4">Register</h2>
+
+                <!-- Social Login buttons -->
+                <div class="d-grid gap-2 mb-4">
+                    <a href="{{ url_for('google.login') }}" class="btn btn-outline-danger">
+                        <img src="https://img.icons8.com/color/16/000000/google-logo.png" class="me-2">
+                        Sign up with Google
+                    </a>
+
+                </div>
+
+                <div class="text-center mb-4">
+                    <span class="divider-text">OR</span>
+                </div>
+
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                        <div class="form-text">We'll send a verification code to this email</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="password" name="password" required onkeyup="checkPasswordStrength()">
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="bi bi-eye" id="toggleIcon"></i>
+                            </button>
+                        </div>
+                        <div id="passwordStrength" class="mt-2">
+                            <div class="progress">
+                                <div id="passwordStrengthBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <small id="passwordStrengthText" class="form-text"></small>
+                        </div>
+                        <div id="passwordRequirements" class="mt-2">
+                            <small class="form-text">Password must contain:</small>
+                            <ul class="list-unstyled small">
+                                <li id="lengthReq"><i class="bi bi-x-circle text-danger"></i> At least 8 characters</li>
+                                <li id="uppercaseReq"><i class="bi bi-x-circle text-danger"></i> At least one uppercase letter</li>
+                                <li id="lowercaseReq"><i class="bi bi-x-circle text-danger"></i> At least one lowercase letter</li>
+                                <li id="numberReq"><i class="bi bi-x-circle text-danger"></i> At least one number</li>
+                                <li id="specialReq"><i class="bi bi-x-circle text-danger"></i> At least one special character</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="risk_tolerance" class="form-label">Risk Tolerance</label>
+                        <select class="form-select" id="risk_tolerance" name="risk_tolerance" required>
+                            <option value="Low">Low (Max 20% sector exposure)</option>
+                            <option value="Medium">Medium (Max 30%)</option>
+                            <option value="High">High (Max 40%)</option>
+                        </select>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">Register</button>
+                    </div>
+                </form>
+                <div class="mt-3 text-center">
+                    <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+                </div>
             </div>
-            <small id="passwordStrengthText" class="form-text"></small>
-        </div>
-        <div id="passwordRequirements" class="mt-2">
-            <small class="form-text">Password must contain:</small>
-            <ul class="list-unstyled small">
-                <li id="lengthReq"><i class="bi bi-x-circle text-danger"></i> At least 8 characters</li>
-                <li id="uppercaseReq"><i class="bi bi-x-circle text-danger"></i> At least one uppercase letter</li>
-                <li id="lowercaseReq"><i class="bi bi-x-circle text-danger"></i> At least one lowercase letter</li>
-                <li id="numberReq"><i class="bi bi-x-circle text-danger"></i> At least one number</li>
-                <li id="specialReq"><i class="bi bi-x-circle text-danger"></i> At least one special character</li>
-            </ul>
         </div>
     </div>
-    <div class="mb-3">
-        <label for="risk_tolerance" class="form-label">Risk Tolerance</label>
-        <select class="form-select" id="risk_tolerance" name="risk_tolerance" required>
-            <option value="Low">Low (Max 20% sector exposure)</option>
-            <option value="Medium">Medium (Max 30%)</option>
-            <option value="High">High (Max 40%)</option>
-        </select>
-    </div>
-    <button type="submit" class="btn btn-success">Register</button>
-</form>
-<div class="mt-3">
-    <p>Already have an account? <a href="{{ url_for('login') }}">Login here.</a></p>
 </div>
 
 <!-- Include Bootstrap Icons -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+<!-- Custom styles for the OR divider -->
+<style>
+    .divider-text {
+        position: relative;
+        text-align: center;
+        margin-top: 15px;
+        margin-bottom: 15px;
+    }
+    .divider-text span {
+        padding: 7px;
+        font-size: 12px;
+        position: relative;
+        z-index: 2;
+        background-color: #fff;
+    }
+    .divider-text:after {
+        content: "";
+        position: absolute;
+        width: 100%;
+        border-bottom: 1px solid #ddd;
+        top: 55%;
+        left: 0;
+        z-index: 1;
+    }
+</style>
 
 <!-- JavaScript for password toggle and strength -->
 <script>

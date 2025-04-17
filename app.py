@@ -11,17 +11,43 @@ from models.sentiment_service import SentimentService
 import pandas as pd
 import datetime
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import os
+from flask_dance.contrib.google import make_google_blueprint, google
+from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
+from flask_dance.consumer import oauth_authorized
+from oauth_config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+from models.oauth import OAuthManager
+from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
+
+
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
+
+app.config["GOOGLE_OAUTH_CLIENT_ID"] = GOOGLE_CLIENT_ID
+app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = GOOGLE_CLIENT_SECRET
+
+google_bp = make_google_blueprint(
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
+    scope=["profile", "email"],
+    redirect_to="google_authorized"  # Use redirect_to, not redirect_url
+)
+
+
+
+app.register_blueprint(google_bp, url_prefix="/login")
+
 
 # Initialise database and managers
 create_database()
 db_manager = DatabaseManager()
 user_manager = UserManager(db_manager)
 portfolio_manager = PortfolioManager(db_manager)
+oauth_manager = OAuthManager(db_manager)
 
 # Initialise the sentiment service globally using unique API retrieved from NewsAPI website
 news_api_key = "5d2d00dd80f34ef1ad10d55df87d49d0"
@@ -90,6 +116,84 @@ def login():
             flash('❌ Invalid email or password, or account not verified.')
 
     return render_template('login_update.html')
+
+
+@app.route('/login/google/authorized')
+def google_authorized():
+    try:
+        if not google.authorized:
+            flash("❌ Failed to log in with Google.")
+            return redirect(url_for("login"))
+
+        resp = google.get("/oauth2/v2/userinfo")
+        if not resp.ok:
+            flash("❌ Failed to get user info from Google.")
+            return redirect(url_for("login"))
+
+        google_info = resp.json()
+        google_user_id = google_info["id"]
+
+        # Check if google account already linked to a user
+        existing_user = oauth_manager.get_user_by_provider_id("google", google_user_id)
+
+        if existing_user:
+            user_id, username, email, verified = existing_user
+
+            if verified:
+                session['user_id'] = user_id
+                session['username'] = username
+                flash(f'😊 Welcome back, {username}!')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('❌ Your account is not verified. Please check your email for verification instructions.')
+                return redirect(url_for('login'))
+        else:
+            username = google_info.get("name", "").replace(" ", "")
+            email = google_info.get("email", "")
+
+            # Check if user with email already exists
+            user = user_manager.get_user_by_email(email)
+
+            if user:
+                oauth_manager.link_oauth_account(user[0], "google", google_user_id, email)
+                session['user_id'] = user[0]
+                session['username'] = user[1]
+                flash(f'😊 Your Google account has been linked to your InvestiBuddy account!')
+                return redirect(url_for('dashboard'))
+            else:
+                result = oauth_manager.create_user_from_oauth(
+                    username=username,
+                    email=email,
+                    provider="google",
+                    provider_user_id=google_user_id
+                )
+
+                if result:
+                    user_id, username = result
+                    session['user_id'] = user_id
+                    session['username'] = username
+                    flash(f'😊 Welcome to InvestiBuddy, {username}!')
+                    return redirect(url_for('dashboard'))
+                else:
+                    flash('❌ Failed to create an account with your Google profile.')
+                    return redirect(url_for('login'))
+
+    except InvalidGrantError:
+        flash("❌ Authentication error. Please try again.")
+        return redirect(url_for("login"))
+    except Exception as e:
+        flash(f"❌ An error occurred: {str(e)}")
+        return redirect(url_for("login"))
+
+
+# Keep a redirect for your existing callback route
+@app.route('/login/google/callback')
+def google_login_callback():
+    return redirect(url_for('google_authorized'))
+
+@app.route('/login/google')
+def google_login():
+    return redirect(url_for('google.login'))
 
 
 @app.route('/forgot-password', methods=['GET', 'POST'])
